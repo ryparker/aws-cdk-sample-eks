@@ -10,10 +10,12 @@
     "deploy": "cdk deploy"
   },
   "dependencies": {
-    "@aws-cdk/aws-eks": "^1.123.0",
-    "aws-cdk": "^1.123.0"
+    "@aws-cdk/aws-ec2": "^1.124.0",
+    "@aws-cdk/aws-eks": "^1.124.0",
+    "aws-cdk": "^1.124.0"
   },
   "devDependencies": {
-    "typescript": "^4.4.3"
+    "esbuild": "^0.13.2",
+    "typescript": "~3.9.10"
   }
 }
