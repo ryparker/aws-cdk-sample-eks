@@ -5,7 +5,7 @@ import { Vpc, SubnetType, Instance, InstanceType, MachineImage, AmazonLinuxGener
 const KEY_PAIR_NAME = 'eks-sample-proxy';
 
 const app = new App();
-const stack = new Stack(app, 'test-layer-fix-eks-with-proxy');
+const stack = new Stack(app, 'eks-with-proxy');
 
 const vpc = new Vpc(stack, 'vpc', {
   maxAzs: 2,
@@ -56,17 +56,6 @@ const proxyInstance = new Instance(stack, 'proxy', {
   init: CloudFormationInit.fromElements(
     InitCommand.shellCommand('sudo apt-get update -y'),
     InitCommand.shellCommand('sudo apt-get install -y squid apache2-utils'),
-    // InitCommand.shellCommand("sudo sed -i 's/http_access deny all/http_access allow all/g' /etc/squid/squid.conf"),
-    // InitCommand.shellCommand(`sed -i '1s/^/${[
-    //   'acl blocked_websites dstdomain "/etc/squid/blocked_sites.acl"',
-    //   'http_access deny blocked_websites',
-    //   'auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd',
-    //   'auth_param basic children 5',
-    //   'auth_param basic realm Squid Basic Authentication',
-    //   'auth_param basic credentialsttl 2 hours',
-    //   'acl auth_users proxy_auth REQUIRED',
-    //   'http_access allow auth_users',
-    // ].join('\n')}\n/' /etc/squid/squid.conf`),
   )
 });
 
@@ -99,7 +88,7 @@ http_access allow auth_users
  * 12. `$ tail -f /var/log/squid/access.log`
  */
 
-// provisiong a cluster
+// Provisiong a cluster
 const cluster = new Cluster(stack, 'hello-eks', {
   version: KubernetesVersion.V1_21,
   // endpointAccess: EndpointAccess.PRIVATE, // No access outside of your VPC.
