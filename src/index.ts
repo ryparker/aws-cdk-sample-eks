@@ -1,21 +1,18 @@
 import { App, Stack } from '@aws-cdk/core';
 import { Cluster, KubernetesVersion, EndpointAccess, KubernetesManifest } from '@aws-cdk/aws-eks';
 import { Vpc, SubnetType, Instance, InstanceType, MachineImage, AmazonLinuxGeneration, AmazonLinuxCpuType, SecurityGroup, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
+import { User } from '@aws-cdk/aws-iam';
 
 const KEY_PAIR_NAME = 'eks-sample-proxy';
 
 const app = new App();
-const stack = new Stack(app, 'eks-with-proxy');
+const stack = new Stack(app, 'patched-eks-with-proxy');
 
 const vpc = new Vpc(stack, 'vpc', {
   maxAzs: 2,
   enableDnsHostnames: true,
   enableDnsSupport: true,
   subnetConfiguration: [
-    {
-      name: 'isolated',
-      subnetType: SubnetType.PRIVATE_ISOLATED,
-    },
     {
       name: 'private',
       subnetType: SubnetType.PRIVATE_WITH_NAT,
@@ -56,6 +53,17 @@ const proxyInstance = new Instance(stack, 'proxy', {
   init: CloudFormationInit.fromElements(
     InitCommand.shellCommand('sudo apt-get update -y'),
     InitCommand.shellCommand('sudo apt-get install -y squid apache2-utils'),
+    InitCommand.shellCommand('OLD="http_access\sdeny\sall";NEW="http_access allow all";sudo sed -i.old "s/$OLD/$NEW/" /etc/squid/squid.conf'),
+    InitCommand.shellCommand("sed -i.old '1s;^;auth_param basic program \/usr\/lib\/squid\/basic_ncsa_auth \/etc\/squid\/passwd;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic children 5\n;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic realm Squid Basic Authentication\n;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic credentialsttl 2 hours\n;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo sed -i.old '1s;^;acl auth_users proxy_auth REQUIRED\n;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo sed -i.old '1s;^;http_access allow auth_users\n;'  /etc/squid/squid.conf"),
+    InitCommand.shellCommand("sudo touch /etc/squid/passwd"),
+    InitCommand.shellCommand("sudo htpasswd -b -c /etc/squid/passwd user1 user1"),
+    InitCommand.shellCommand("sudo systemctl restart squid"),
+    InitCommand.shellCommand("sudo tail -f /var/log/squid/access.log"),
   )
 });
 
@@ -88,7 +96,7 @@ http_access allow auth_users
  * 12. `$ tail -f /var/log/squid/access.log`
  */
 
-// Provisiong a cluster
+// Provisioning a cluster
 const cluster = new Cluster(stack, 'hello-eks', {
   version: KubernetesVersion.V1_21,
   // endpointAccess: EndpointAccess.PRIVATE, // No access outside of your VPC.
@@ -116,3 +124,16 @@ cluster.addManifest('hello-kubernetes-manifest', {
     ]
   }
 });
+
+const adminUser = User.fromUserName(stack, 'Admin', 'Admin');
+cluster.awsAuth.addUserMapping(adminUser, { groups: ['system:masters'] });
+
+// Start 1:51
+// End 2:36
+// Total: 45m
+// 2nd test total: 37m
+
+// Delete
+// Start 4:07
+// End 4:17
+// Total: 10m
