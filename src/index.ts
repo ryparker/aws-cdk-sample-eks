@@ -1,12 +1,15 @@
 import { App, Stack } from '@aws-cdk/core';
-import { Cluster, KubernetesVersion, EndpointAccess, KubernetesManifest } from '@aws-cdk/aws-eks';
-import { Vpc, SubnetType, Instance, InstanceType, MachineImage, AmazonLinuxGeneration, AmazonLinuxCpuType, SecurityGroup, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
+import { Cluster, KubernetesVersion } from '@aws-cdk/aws-eks';
+import { Vpc, SubnetType, Instance, InstanceType, MachineImage, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
 import { User } from '@aws-cdk/aws-iam';
 
 const KEY_PAIR_NAME = 'eks-sample-proxy';
+const PROXY_USERNAME = 'user1';
+const PROXY_PASSWORD = 'user1';
+const ADMIN_USERNAME = 'Admin';
 
 const app = new App();
-const stack = new Stack(app, 'patched-eks-with-proxy');
+const stack = new Stack(app, 'eks-with-proxy');
 
 const vpc = new Vpc(stack, 'vpc', {
   maxAzs: 2,
@@ -51,19 +54,10 @@ const proxyInstance = new Instance(stack, 'proxy', {
   allowAllOutbound: true,
   keyName: KEY_PAIR_NAME,
   init: CloudFormationInit.fromElements(
+    // Tools
     InitCommand.shellCommand('sudo apt-get update -y'),
     InitCommand.shellCommand('sudo apt-get install -y squid apache2-utils'),
     InitCommand.shellCommand('OLD="http_access\sdeny\sall";NEW="http_access allow all";sudo sed -i.old "s/$OLD/$NEW/" /etc/squid/squid.conf'),
-    InitCommand.shellCommand("sed -i.old '1s;^;auth_param basic program \/usr\/lib\/squid\/basic_ncsa_auth \/etc\/squid\/passwd;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic children 5\n;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic realm Squid Basic Authentication\n;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo sed -i.old '1s;^;auth_param basic credentialsttl 2 hours\n;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo sed -i.old '1s;^;acl auth_users proxy_auth REQUIRED\n;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo sed -i.old '1s;^;http_access allow auth_users\n;'  /etc/squid/squid.conf"),
-    InitCommand.shellCommand("sudo touch /etc/squid/passwd"),
-    InitCommand.shellCommand("sudo htpasswd -b -c /etc/squid/passwd user1 user1"),
-    InitCommand.shellCommand("sudo systemctl restart squid"),
-    InitCommand.shellCommand("sudo tail -f /var/log/squid/access.log"),
   )
 });
 
@@ -77,7 +71,7 @@ proxyInstance.connections.allowFromAnyIpv4(Port.allTraffic(), 'Allow all traffic
  * 5. `$ nano /etc/squid/squid.conf`
  *  - Replace 'http_access deny all' with 'http_access allow all'
  *  - add the following to top of file:
-```sh
+```
 acl blocked_websites dstdomain "/etc/squid/blocked_sites.acl"
 http_access deny blocked_websites
 auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
@@ -96,13 +90,13 @@ http_access allow auth_users
  * 12. `$ tail -f /var/log/squid/access.log`
  */
 
-// Provisioning a cluster
+
 const cluster = new Cluster(stack, 'hello-eks', {
   version: KubernetesVersion.V1_21,
   // endpointAccess: EndpointAccess.PRIVATE, // No access outside of your VPC.
   placeClusterHandlerInVpc: true, // Provision the 'ClusterHandler' Lambda function responsible for interacting with the EKS API in order to control the cluster lifecycle
   clusterHandlerEnvironment: {
-    http_proxy: `http://user1:user1@${proxyInstance.instancePublicIp}:3128`, // Set the http_proxy environment variable to the proxy server's URL
+    http_proxy: `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:3128`, // Set the http_proxy environment variable to the proxy server's URL
   },
   vpc,
 });
@@ -125,15 +119,13 @@ cluster.addManifest('hello-kubernetes-manifest', {
   }
 });
 
-const adminUser = User.fromUserName(stack, 'Admin', 'Admin');
+const adminUser = User.fromUserName(stack, 'Admin', ADMIN_USERNAME);
 cluster.awsAuth.addUserMapping(adminUser, { groups: ['system:masters'] });
 
-// Start 1:51
-// End 2:36
-// Total: 45m
-// 2nd test total: 37m
+// Deploy times
+// 1st test: 45m
+// 2nd test: 37m
 
-// Delete
-// Start 4:07
-// End 4:17
-// Total: 10m
+// Delete times
+// 1st test: 10m
+// 2nd test: 13m
