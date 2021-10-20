@@ -26,7 +26,9 @@
     "stripInternal": false,
     "target": "ES2018",
     "composite": false,
-    "outDir": "build/js"
+    "outDir": "build/js",
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
   },
   "include": [
     "src/**/*.ts"
