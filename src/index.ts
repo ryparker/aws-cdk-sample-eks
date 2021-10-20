@@ -1,7 +1,8 @@
-import { App, Stack } from '@aws-cdk/core';
-import { Cluster, KubernetesVersion } from '@aws-cdk/aws-eks';
-import { Vpc, SubnetType, Instance, InstanceType, MachineImage, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
-import { User } from '@aws-cdk/aws-iam';
+import { App, Stack, aws_eks, aws_ec2, aws_iam } from 'aws-cdk-lib';
+
+const { Cluster, KubernetesVersion } = aws_eks;
+const { Vpc, SubnetType, Instance, InstanceType, MachineImage, Peer, Port, UserData, CloudFormationInit, InitCommand } = aws_ec2;
+const { User } = aws_iam;
 
 const KEY_PAIR_NAME = 'eks-sample-proxy';
 const PROXY_USERNAME = 'user1';
@@ -9,7 +10,7 @@ const PROXY_PASSWORD = 'user1';
 const ADMIN_USERNAME = 'Admin';
 
 const app = new App();
-const stack = new Stack(app, 'eks-with-proxy');
+const stack = new Stack(app, 'eks-with-cdkv2-fix');
 
 const vpc = new Vpc(stack, 'vpc', {
   maxAzs: 2,

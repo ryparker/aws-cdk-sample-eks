@@ -10,10 +10,8 @@
     "deploy": "cdk deploy"
   },
   "dependencies": {
-    "@aws-cdk/aws-ec2": "^1.126.0",
-    "@aws-cdk/aws-eks": "^1.126.0",
-    "@aws-cdk/aws-iam": "1.126.0",
-    "aws-cdk": "^1.126.0"
+    "aws-cdk-lib": "2.0.0-rc.24",
+    "constructs": "10.0.9"
   },
   "devDependencies": {
     "esbuild": "^0.13.4",

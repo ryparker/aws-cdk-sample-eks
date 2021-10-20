@@ -2,17 +2,17 @@
   "compilerOptions": {
     "alwaysStrict": false,
     "charset": "utf8",
-    "declaration": false,
+    "declaration": true,
     "experimentalDecorators": true,
     "incremental": true,
     "inlineSourceMap": true,
     "inlineSources": true,
     "lib": [
-      "es2018"
+      "es2019"
     ],
     "module": "CommonJS",
     "newLine": "lf",
-    "noEmitOnError": false,
+    "noEmitOnError": true,
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -24,9 +24,17 @@
     "strictNullChecks": false,
     "strictPropertyInitialization": false,
     "stripInternal": false,
+<<<<<<< Updated upstream
     "target": "ES2018",
     "composite": false,
     "outDir": "build/js"
+=======
+    "target": "es2019",
+    "composite": true,
+    "outDir": "build/js",
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+>>>>>>> Stashed changes
   },
   "include": [
     "src/**/*.ts"
