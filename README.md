@@ -4,28 +4,30 @@ An EKS cluster that uses a Squid proxy for the onEvent lambda's requests.
 
 ## :rocket: Quick Start
 
-**1. Install dependencies with Yarn v1**
+**1. Setup a key pair**
+
+[Create a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair) with the name `eks-with-proxy-sample` in your AWS account.
+
+*If you already have a key pair configured, change the `KEY_PAIR_NAME` variable within `src/index.ts` to match your key pair name.*
+
+**2. Install dependencies with Yarn v1**
 
 ```sh
 yarn install
 ```
 
-**2. Create the [bootstrap stack](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) in your AWS account**
+**3. Create the [bootstrap stack](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) in your AWS account**
 _This only needs to be ran once per account/region._
 
 ```sh
 yarn bootstrap
 ```
 
-**3. Build Cloudformation files**
+**4. Build Cloudformation files**
 
 ```sh
 yarn build
 ```
-
-**4. Setup Key Pair**
-
-[Create a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair) with the name 'eks-with-proxy-sample' in your AWS account. If you already have a key pair configured, change the `KEY_PAIR_NAME` variable within `src/index.ts` to match your key pair name.
 
 **5. Deploy**
 
@@ -35,7 +37,9 @@ yarn deploy
 
 **6. Setup a proxy server on the EC2 instance**
 
-Setup the proxy server you'd like to use for proxying the EKS cluster's onEvent lambda requests. See "[Setup the EC2 instance with Squid Proxy](#setup-the-ec2-instance-with-squid-proxy)" for an example setup.
+Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lambda requests.
+
+*See "[Setup the EC2 instance with Squid Proxy](#setup-the-ec2-instance-with-squid-proxy)" for an example setup.*
 
 ## :satellite: Setup the EC2 instance with Squid Proxy
 
