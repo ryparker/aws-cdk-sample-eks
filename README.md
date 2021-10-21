@@ -39,9 +39,9 @@ yarn deploy
 
 Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lambda requests.
 
-*See "[Setup the EC2 instance with Squid Proxy](#setup-the-ec2-instance-with-squid-proxy)" for an example setup.*
+*See "[Setup Squid Proxy on the EC2 instance](#satellite-setup-squid-proxy-on-the-ec2-instance)" for an example setup.*
 
-## :satellite: Setup the EC2 instance with Squid Proxy
+## :satellite: Setup Squid Proxy on the EC2 instance
 
 *Squid should already be installed on the EC2 instance.*
 
