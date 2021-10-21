@@ -42,7 +42,7 @@ Setup the proxy server you'd like to use for proxying the EKS cluster's onEvent 
 **1. SSH into the EC2 instance**
 
   ```sh
-  ssh -i ~/.ssh/eks-sample-proxy.pem ubuntu@<public-dns-name>
+  ssh -i ~/.ssh/eks-with-proxy-sample.pem ubuntu@<public-dns-name>
   ```
 
 **2. Access elevated privilages**
