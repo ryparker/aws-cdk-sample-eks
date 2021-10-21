@@ -27,13 +27,13 @@ yarn build
 
 [Create a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair) with the name 'eks-with-proxy-sample' in your AWS account. If you already have a key pair configured, change the `KEY_PAIR_NAME` variable within `src/index.ts` to match your key pair name.
 
-**4. Deploy**
+**5. Deploy**
 
 ```sh
 yarn deploy
 ```
 
-**5. Setup a proxy server on the EC2 instance**
+**6. Setup a proxy server on the EC2 instance**
 
 Setup the proxy server you'd like to use for proxying the EKS cluster's onEvent lambda requests. See "[Setup the EC2 instance with Squid Proxy](#setup-the-ec2-instance-with-squid-proxy)" for an example setup.
 
