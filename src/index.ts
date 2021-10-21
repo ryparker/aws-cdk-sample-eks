@@ -3,7 +3,7 @@ import { Cluster, KubernetesVersion } from '@aws-cdk/aws-eks';
 import { Vpc, SubnetType, Instance, InstanceType, MachineImage, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
 import { User } from '@aws-cdk/aws-iam';
 
-const KEY_PAIR_NAME = 'eks-sample-proxy';
+const KEY_PAIR_NAME = 'eks-with-proxy-sample';
 const PROXY_USERNAME = 'user1';
 const PROXY_PASSWORD = 'user1';
 const ADMIN_USERNAME = 'Admin';
@@ -27,7 +27,7 @@ const vpc = new Vpc(stack, 'vpc', {
   ]
 });
 
-// Base Ubuntu image does not come with 'cfn-signal' a required AWS dependency
+// Base Ubuntu image does not come with 'cfn-signal' a required AWS dependency.
 const userData = UserData.forLinux()
 userData.addCommands(
   'apt-get update -y',
@@ -63,37 +63,9 @@ const proxyInstance = new Instance(stack, 'proxy', {
 
 proxyInstance.connections.allowFromAnyIpv4(Port.allTraffic(), 'Allow all traffic');
 
-/**
- * Configure the proxy server (manually)
- *
- * 1. `$ ssh -i ~/.ssh/eks-sample-proxy.pem ubuntu@<public-dns-name>`
- * 2. `$ sudo su`
- * 5. `$ nano /etc/squid/squid.conf`
- *  - Replace 'http_access deny all' with 'http_access allow all'
- *  - add the following to top of file:
-```
-acl blocked_websites dstdomain "/etc/squid/blocked_sites.acl"
-http_access deny blocked_websites
-auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
-auth_param basic children 5
-auth_param basic realm Squid Basic Authentication
-auth_param basic credentialsttl 2 hours
-acl auth_users proxy_auth REQUIRED
-http_access allow auth_users
-```
- * 6. `$ touch /etc/squid/passwd`
- * 7. `$ htpasswd /etc/squid/passwd user1`
- * 8. provide a password when prompted
- * 9. `$ nano /etc/squid/blocked_sites.acl`
- * 10. Add websites to block to the blocked_sites file e.g. '.google.com'
- * 11. `$ systemctl restart squid`
- * 12. `$ tail -f /var/log/squid/access.log`
- */
-
 
 const cluster = new Cluster(stack, 'hello-eks', {
   version: KubernetesVersion.V1_21,
-  // endpointAccess: EndpointAccess.PRIVATE, // No access outside of your VPC.
   placeClusterHandlerInVpc: true, // Provision the 'ClusterHandler' Lambda function responsible for interacting with the EKS API in order to control the cluster lifecycle
   clusterHandlerEnvironment: {
     http_proxy: `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:3128`, // Set the http_proxy environment variable to the proxy server's URL
@@ -121,11 +93,3 @@ cluster.addManifest('hello-kubernetes-manifest', {
 
 const adminUser = User.fromUserName(stack, 'Admin', ADMIN_USERNAME);
 cluster.awsAuth.addUserMapping(adminUser, { groups: ['system:masters'] });
-
-// Deploy times
-// 1st test: 45m
-// 2nd test: 37m
-
-// Delete times
-// 1st test: 10m
-// 2nd test: 13m
