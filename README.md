@@ -8,7 +8,7 @@ An EKS cluster that uses a Squid proxy for the onEvent lambda's requests.
 
 [Create a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair) with the name `eks-with-proxy-sample` in your AWS account.
 
-*If you already have a key pair configured, change the `KEY_PAIR_NAME` variable within `src/index.ts` to match your key pair name.*
+*If you already have a key pair configured, change the `KEY_PAIR_NAME` variable within `src/constants.ts` to match your key pair name.*
 
 **2. Install dependencies with Yarn v1**
 
@@ -42,6 +42,8 @@ Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lamb
 *See "[Setup the EC2 instance with Squid Proxy](#setup-the-ec2-instance-with-squid-proxy)" for an example setup.*
 
 ## :satellite: Setup the EC2 instance with Squid Proxy
+
+*Squid should already be installed on the EC2 instance.*
 
 **1. SSH into the EC2 instance**
 

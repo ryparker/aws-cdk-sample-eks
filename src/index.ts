@@ -1,17 +1,21 @@
-import { App, Stack } from '@aws-cdk/core';
+import { App, Stack, CfnOutput } from '@aws-cdk/core';
 import { Cluster, KubernetesVersion } from '@aws-cdk/aws-eks';
 import { Vpc, SubnetType, Instance, InstanceType, MachineImage, Peer, Port, UserData, CloudFormationInit, InitCommand } from '@aws-cdk/aws-ec2';
 import { User } from '@aws-cdk/aws-iam';
-
-const KEY_PAIR_NAME = 'eks-with-proxy-sample';
-const PROXY_USERNAME = 'user1';
-const PROXY_PASSWORD = 'user1';
-const ADMIN_USERNAME = 'Admin';
+import {
+  KEY_PAIR_NAME,
+  SYSTEMS_MASTER_AWS_USERNAME,
+  UBUNTU_AMI_REGION,
+  UBUNTU_AMI_ID,
+  PROXY_USERNAME,
+  PROXY_PASSWORD,
+  PROXY_PORT
+} from './constants';
 
 const app = new App();
-const stack = new Stack(app, 'eks-with-proxy');
+const stack = new Stack(app, 'EksWithProxySample');
 
-const vpc = new Vpc(stack, 'vpc', {
+const vpc = new Vpc(stack, 'Vpc', {
   maxAzs: 2,
   enableDnsHostnames: true,
   enableDnsSupport: true,
@@ -42,41 +46,36 @@ userData.addCommands(
   'ln -s /usr/local/bin/cfn-* /opt/aws/bin/'
 )
 
-const proxyInstance = new Instance(stack, 'proxy', {
-  instanceType: new InstanceType('t2.micro'),
-  machineImage: MachineImage.genericLinux({
-    'us-east-1': 'ami-09e67e426f25ce0d7' // Ubuntu v20.04 LTS x86
-  }, {
-    userData
-  }),
+const proxyInstance = new Instance(stack, 'Proxy', {
   vpc,
   vpcSubnets: { subnetType: SubnetType.PUBLIC },
   allowAllOutbound: true,
+  instanceType: new InstanceType('t2.micro'),
+  machineImage: MachineImage.genericLinux({ [UBUNTU_AMI_REGION]: UBUNTU_AMI_ID }, { userData }),
   keyName: KEY_PAIR_NAME,
   init: CloudFormationInit.fromElements(
-    // Tools
     InitCommand.shellCommand('sudo apt-get update -y'),
     InitCommand.shellCommand('sudo apt-get install -y squid apache2-utils'),
-    InitCommand.shellCommand('OLD="http_access\sdeny\sall";NEW="http_access allow all";sudo sed -i.old "s/$OLD/$NEW/" /etc/squid/squid.conf'),
   )
 });
 
-proxyInstance.connections.allowFromAnyIpv4(Port.allTraffic(), 'Allow all traffic');
+proxyInstance.connections.allowFrom(Peer.anyIpv4(), Port.tcp(22), 'Allow SSH access to the proxy server');
 
 
-const cluster = new Cluster(stack, 'hello-eks', {
-  version: KubernetesVersion.V1_21,
-  placeClusterHandlerInVpc: true, // Provision the 'ClusterHandler' Lambda function responsible for interacting with the EKS API in order to control the cluster lifecycle
-  clusterHandlerEnvironment: {
-    http_proxy: `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:3128`, // Set the http_proxy environment variable to the proxy server's URL
-  },
+const cluster = new Cluster(stack, 'HelloEks', {
   vpc,
+  version: KubernetesVersion.V1_21,
+  // Provision the 'ClusterHandler' Lambda function responsible for interacting with the EKS API in order to control the cluster lifecycle.
+  placeClusterHandlerInVpc: true,
+  clusterHandlerEnvironment: {
+    // Set the http_proxy environment variable to the proxy server's URL.
+    http_proxy: `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:${PROXY_PORT}`,
+  },
 });
 
-cluster.connections.allowTo(proxyInstance, Port.tcp(80), 'Allow HTTP traffic to the proxy server');
-cluster.connections.allowFrom(Peer.anyIpv4(), Port.tcp(22), 'Allow SSH access to the cluster server');
+cluster.connections.allowTo(proxyInstance, Port.tcp(PROXY_PORT), 'Allow traffic to the proxy server');
 
-cluster.addManifest('hello-kubernetes-manifest', {
+cluster.addManifest('HelloKubernetesManifest', {
   apiVersion: 'v1',
   kind: 'Pod',
   metadata: { name: 'hello-kubernetes' },
@@ -91,5 +90,12 @@ cluster.addManifest('hello-kubernetes-manifest', {
   }
 });
 
-const adminUser = User.fromUserName(stack, 'Admin', ADMIN_USERNAME);
-cluster.awsAuth.addUserMapping(adminUser, { groups: ['system:masters'] });
+// Map an AWS user to the 'system:masters' kubeconfig group.
+const awsUser = User.fromUserName(stack, 'SystemsMasterAwsUser', SYSTEMS_MASTER_AWS_USERNAME);
+cluster.awsAuth.addUserMapping(awsUser, { groups: ['system:masters'] });
+
+/* Stack outputs */
+new CfnOutput(stack, 'ClusterName', { value: cluster.clusterName });
+new CfnOutput(stack, 'ProxyInstancePublicIp', { value: proxyInstance.instancePublicIp });
+new CfnOutput(stack, 'ProxyInstanceSshCommand', { value: `ssh -i ~/.ssh/${KEY_PAIR_NAME}.pem ubuntu@${proxyInstance.instancePublicIp}` });
+new CfnOutput(stack, 'SystemsMasterUserArn', { value: awsUser.userArn });
