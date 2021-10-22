@@ -59,8 +59,9 @@ const proxyInstance = new Instance(stack, 'Proxy', {
   )
 });
 
+// Allow all Ipv4 traffic to enable Lambda to connect to the proxy server.
+proxyInstance.connections.allowFrom(Peer.anyIpv4(), Port.tcp(PROXY_PORT), 'Allow PROXY_PORT access to the proxy server');
 proxyInstance.connections.allowFrom(Peer.anyIpv4(), Port.tcp(22), 'Allow SSH access to the proxy server');
-
 
 const cluster = new Cluster(stack, 'HelloEks', {
   vpc,
@@ -70,10 +71,10 @@ const cluster = new Cluster(stack, 'HelloEks', {
   clusterHandlerEnvironment: {
     // Set the http_proxy environment variable to the proxy server's URL.
     http_proxy: `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:${PROXY_PORT}`,
+    https_proxy: `https://${PROXY_USERNAME}:${PROXY_PASSWORD}@${proxyInstance.instancePublicIp}:${PROXY_PORT}`,
+    no_proxy: "sts.amazonaws.com"
   },
 });
-
-cluster.connections.allowTo(proxyInstance, Port.tcp(PROXY_PORT), 'Allow traffic to the proxy server');
 
 cluster.addManifest('HelloKubernetesManifest', {
   apiVersion: 'v1',

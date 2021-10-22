@@ -81,7 +81,7 @@ Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lamb
   ```sh
   touch /etc/squid/passwd
   htpasswd /etc/squid/passwd user1
-  # Provide a password when prompted
+  # Provide the password `user1` when prompted.
   ```
 
 **5. Restart Squid**
