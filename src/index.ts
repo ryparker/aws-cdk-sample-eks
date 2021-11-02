@@ -11,7 +11,7 @@ import {
 
 import createVpcStack from './stacks/vpc'
 import createProxyInstanceStack from './stacks/proxy-instance'
-import createEksClusterStack from './stacks/eks'
+import createEksClusterStack from './stacks/eks-cluster'
 
 
 const app = new App();
