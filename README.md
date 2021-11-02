@@ -41,16 +41,16 @@ Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lamb
 
 *See "[Setup Squid Proxy on the EC2 instance](#satellite-setup-squid-proxy-on-the-ec2-instance)" for an example setup.*
 
-## :satellite: Setup Squid Proxy on the EC2 instance
-
-*Squid should already be installed on the EC2 instance.*
-
-
 **7. Deploy EKS Cluster Stack**
 
 ```sh
 yarn deploy EksCluster
 ```
+
+## :satellite: Setup Squid Proxy on the EC2 instance
+
+*Squid should already be installed on the EC2 instance.*
+
 
 **1. SSH into the EC2 instance**
 
