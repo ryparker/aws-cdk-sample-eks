@@ -29,10 +29,10 @@ yarn bootstrap
 yarn build
 ```
 
-**5. Deploy**
+**5. Deploy Vpc and ProxyInstance Stacks**
 
 ```sh
-yarn deploy
+yarn deploy Vpc ProxyInstance
 ```
 
 **6. Setup a proxy server on the EC2 instance**
@@ -45,10 +45,17 @@ Setup the proxy server you'd like to use to proxy the EKS cluster's onEvent lamb
 
 *Squid should already be installed on the EC2 instance.*
 
+
+**7. Deploy EKS Cluster Stack**
+
+```sh
+yarn deploy EksCluster
+```
+
 **1. SSH into the EC2 instance**
 
   ```sh
-  ssh -i ~/.ssh/eks-with-proxy-sample.pem ubuntu@<public-dns-name>
+  ssh -i ~/.ssh/eks-with-proxy-sample.pem ubuntu@<public-ip>
   ```
 
 **2. Access elevated privilages**

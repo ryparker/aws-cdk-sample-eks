@@ -6,7 +6,7 @@
   "author": "Ryan Parker <ryan.parker3@outlook.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && cdk synth",
+    "build": "yarn clean && tsc && cdk synth",
     "deploy": "cdk deploy",
     "clean": "rimraf build cdk.context.json"
   },
