@@ -1,6 +1,6 @@
 # aws-cdk-sample-eks
 
-An EKS cluster that uses a Squid proxy for the onEvent lambda's requests.
+An EKS cluster that routes all internet traffic through a Squid proxy.
 
 ## :rocket: Quick Start
 

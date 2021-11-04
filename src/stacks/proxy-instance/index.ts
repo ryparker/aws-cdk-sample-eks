@@ -10,14 +10,12 @@ import {
   UserData,
   CloudFormationInit,
   InitCommand,
-  SecurityGroup,
 } from '@aws-cdk/aws-ec2';
 
 export default (scope: Construct, props: {
   keyPairName: string,
   amiRegion: string,
   amiId: string,
-  clusterSecurityGroup: SecurityGroup,
   vpc: Vpc,
 }) => {
   const stack = new Stack(scope, 'ProxyInstance');
@@ -53,6 +51,7 @@ export default (scope: Construct, props: {
 
   /* Stack Outputs */
   new CfnOutput(stack, 'ProxyInstancePublicIp', { value: proxyInstance.instancePublicIp });
+  new CfnOutput(stack, 'ProxyInstancePrivateIp', { value: proxyInstance.instancePrivateIp });
   new CfnOutput(stack, 'ProxyInstanceSshCommand', { value: `ssh -i ~/.ssh/${props.keyPairName}.pem ubuntu@${proxyInstance.instancePublicIp}` });
 
   return { stack, proxyInstance };

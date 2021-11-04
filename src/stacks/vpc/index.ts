@@ -1,5 +1,5 @@
 import { Construct, Stack, CfnOutput } from '@aws-cdk/core';
-
+import { LogGroup } from "@aws-cdk/aws-logs";
 import {
   Vpc,
   SubnetType,
@@ -7,11 +7,14 @@ import {
   SecurityGroup,
   InterfaceVpcEndpointAwsService,
   GatewayVpcEndpointAwsService,
+  FlowLogDestination,
+  FlowLogTrafficType
 } from '@aws-cdk/aws-ec2';
-
 
 export default (scope: Construct) => {
   const stack = new Stack(scope, 'Vpc');
+
+  const cloudWatchLogs = new LogGroup(stack, 'Log');
 
   const vpc = new Vpc(stack, 'VpcResource', {
     maxAzs: 2,
@@ -32,7 +35,14 @@ export default (scope: Construct) => {
         service: GatewayVpcEndpointAwsService.S3,
       },
     },
-  });
+    flowLogs: {
+      s3: {
+        destination: FlowLogDestination.toCloudWatchLogs(cloudWatchLogs),
+        trafficType: FlowLogTrafficType.ALL,
+      }
+    }
+  }
+  );
 
   // Security group used to connect the EKS cluster with the proxy instance.
   const clusterSecurityGroup = new SecurityGroup(stack, 'ClusterHandlerSecurityGroup', {
@@ -70,8 +80,14 @@ export default (scope: Construct) => {
   stsEndpoint.connections.allowDefaultPortFromAnyIpv4();
 
   /* Stack Outputs */
+  new CfnOutput(stack, 'VpcFlowLogs', { value: cloudWatchLogs.logGroupArn });
   new CfnOutput(stack, 'PublicSubnets', { value: vpc.publicSubnets.join(', ') });
+  new CfnOutput(stack, 'IsolatedSubnets', { value: vpc.isolatedSubnets.join(', ') });
   new CfnOutput(stack, 'PrivateSubnets', { value: vpc.privateSubnets.join(', ') });
 
-  return { stack, vpc, clusterSecurityGroup }
+  return {
+    stack,
+    vpc,
+    clusterSecurityGroup
+  }
 }

@@ -13,11 +13,11 @@ export default (scope: Construct, props: {
   clusterSecurityGroup: SecurityGroup,
   proxyInstance: Instance,
   proxyUrl: string,
-  systemsMasterAwsUser: string
+  systemsMasterAwsUser: string,
 }) => {
   const stack = new Stack(scope, 'EksCluster');
 
-  // Add Proxy instance to security group so that Cluster can access it
+  // Add Proxy instance to security group so that Cluster can access it.
   props.proxyInstance.addSecurityGroup(props.clusterSecurityGroup);
 
   const cluster = new Cluster(stack, 'HelloEks', {
@@ -28,8 +28,11 @@ export default (scope: Construct, props: {
     placeClusterHandlerInVpc: true,
     clusterHandlerSecurityGroup: props.clusterSecurityGroup,
     clusterHandlerEnvironment: {
-      // Set the http_proxy environment variable to the proxy server's URL.
-      http_proxy: props.proxyUrl,
+      // Set the https_proxy environment variable to the proxy server's URL.
+      https_proxy: props.proxyUrl,
+    },
+    kubectlEnvironment: {
+      https_proxy: props.proxyUrl,
     },
   });
 
